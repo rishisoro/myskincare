@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>My Plum Routine — Rishikanta</title>
+<meta name="description" content="Rishikanta's Plum skincare routine tracker for smooth skin, even tone and smaller-looking pores. Starts 9 Nov 2026.">
+<meta name="theme-color" content="#7fc4e8">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icons/icon-192.png" type="image/png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Plum Routine">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div id="tourOverlay" class="tour hidden">
+  <div class="tour-box">
+    <h2>Welcome, Rishikanta 👋</h2>
+    <p>1️⃣ The top card always shows <b>what to do right now</b> — it changes by date and time of day.</p>
+    <p>2️⃣ Tap a step when you finish it. The <b>next step</b> is highlighted for you.</p>
+    <p>3️⃣ Fill the <b>Daily Log</b> at night, take a <b>photo every Sunday</b>, and <b>Export a backup</b> on Sundays.</p>
+    <button class="primary" id="tourDone">Got it — start</button>
+  </div>
+</div>
+
+<header class="app-header">
+  <div class="greeting" id="greeting">Good Day, Rishikanta</div>
+  <div class="wish" id="wish"></div>
+  <div class="header-meta">
+    <span id="todayLabel"></span>
+    <span class="chip" id="dayChip"></span>
+    <span class="chip" id="slotChip"></span>
+    <span class="chip" id="clockChip"></span>
+  </div>
+</header>
+
+<main>
+  <div id="installBanner" class="banner hidden">📲 Install this app: Chrome menu (⋮) → <b>Add to Home screen / Install app</b>. <button class="mini" id="installDismiss">Dismiss</button></div>
+  <div id="updateBanner" class="banner hidden">🔄 A new version is available. <button class="mini" id="updateReload">Tap to update</button></div>
+  <div id="stageHoldBanner" class="banner danger hidden"></div>
+  <div id="reorderBanner" class="banner hidden">☀️ Your sunscreen may finish in about a week at daily 2-finger use — reorder soon so you don't miss days.</div>
+
+  <!-- TODAY -->
+  <section id="tab-today" class="tab active">
+    <div id="previewBanner" class="banner hidden">Starts tomorrow · Mon 9 Nov 2026 — today is a preview, ticks are not counted.</div>
+
+    <div class="card donow">
+      <h2 id="doNowTitle">Do Now</h2>
+      <div id="doNowBody"></div>
+    </div>
+
+    <div class="card">
+      <div class="row between"><h3>Shave Day</h3>
+      <label class="switch"><input type="checkbox" id="shaveToggle"><span></span></label></div>
+      <p class="small" id="shaveHint">Turn ON only on your razor day. Toner &amp; serum are skipped that day. Tip: set your weekly shave day in Settings (Progress tab) and this turns on automatically.</p>
+    </div>
+
+    <div class="card">
+      <h3>Today's Progress</h3>
+      <div class="ring-row">
+        <div class="ring-wrap">
+          <svg class="ring" viewBox="0 0 84 84"><circle class="ring-bg" cx="42" cy="42" r="36"/><circle class="ring-val" id="ringVal" cx="42" cy="42" r="36"/></svg>
+          <div class="ring-text" id="ringText">0%</div>
+        </div>
+        <div class="ring-side">
+          <div class="progress-wrap"><div class="progress-label"><span>Morning</span><b id="amPct">0%</b></div><div class="bar"><i id="amBar"></i></div></div>
+          <div class="progress-wrap"><div class="progress-label"><span>Night</span><b id="pmPct">0%</b></div><div class="bar"><i id="pmBar"></i></div></div>
+          <div class="progress-wrap"><div class="progress-label"><span>Full Day</span><b id="dayPct">0%</b></div><div class="bar"><i id="dayBar"></i></div></div>
+        </div>
+      </div>
+      <div id="timeline" class="small"></div>
+      <div id="spfTimer" class="small"></div>
+    </div>
+
+    <div id="otherRoutine"></div>
+    <div id="redFlag" class="banner danger hidden"></div>
+
+    <div class="card">
+      <details id="logDetails">
+        <summary><h3 style="display:inline">Daily Log</h3> <span class="small">— tap to open (best at night)</span></summary>
+        <label>Redness (0 = none, 3 = high)</label>
+        <div class="seg" id="rednessSeg"></div>
+        <label>Smoothness (1–5)</label>
+        <div class="seg" id="smoothSeg"></div>
+        <label>Even tone (1–5)</label>
+        <div class="seg" id="toneSeg"></div>
+        <label>Any burning / itching today?</label>
+        <div class="seg" id="burnSeg"></div>
+        <label>Notes</label>
+        <textarea id="logNotes" rows="3" placeholder="e.g. skin felt calm, T-zone shiny by evening"></textarea>
+        <button class="primary" id="saveLog">Save Log</button>
+        <p class="small" id="logSavedAt"></p>
+      </details>
+    </div>
+
+    <div class="card" id="sundayCard">
+      <h3>📸 Sunday Progress Photo</h3>
+      <p class="small">Daylight, facing a window, same angle, no product on skin. Photos are stored <b>only on this device</b> (IndexedDB) — never uploaded.</p>
+      <label class="file-label">Add progress photo<input type="file" id="photoFile" accept="image/*" capture="user" hidden></label>
+      <button class="secondary" id="photoBtn">Mark photo done (no upload)</button>
+      <p class="small" id="photoStatus"></p>
+      <div id="photoCompare" class="hidden">
+        <p class="small"><b>Compare:</b> first photo ↔ latest photo. Drag the slider.</p>
+        <div class="compare-wrap">
+          <img id="cmpNew" alt="Latest progress photo">
+          <div class="compare-top" id="cmpTopWrap"><img id="cmpOld" alt="First progress photo"></div>
+          <input type="range" id="cmpSlider" min="0" max="100" value="50">
+        </div>
+        <div class="row between small"><span>First</span><span>Latest</span></div>
+      </div>
+      <div id="photoGallery" class="gallery"></div>
+    </div>
+  </section>
+
+  <!-- PRODUCTS -->
+  <section id="tab-products" class="tab">
+    <div class="card"><h3>My Skin</h3>
+      <p>Rishikanta, 28 · Sensitive skin (redness) · Balanced — not dry, not oily · T-zone shine by evening</p>
+      <p><b>Goals:</b> 1) Smooth skin &nbsp; 2) Even tone &nbsp; 3) Smaller-looking pores</p>
+    </div>
+    <div class="card"><h3>My 5 Plum Products</h3><div id="productList"></div>
+      <p class="small">Finish estimate: sunscreen finishes first (~3–4 weeks at daily 2-finger use). Face wash ~6–8 weeks, toner ~8–10 weeks, gel cream ~6 weeks, serum (PM only) ~10–12 weeks.</p>
+    </div>
+  </section>
+
+  <!-- PROGRESS -->
+  <section id="tab-progress" class="tab">
+    <div class="card"><h3>Progress</h3>
+      <div class="stats"><div><b id="streak">0</b><span>day streak</span></div><div><b id="fullDays">0</b><span>full days</span></div><div><b id="currentDay">—</b><span>current day</span></div></div>
+      <div id="stageTimeline"></div>
+      <p class="small">Expected: smoothness 4–6 weeks · pores look cleaner 6–8 weeks · even tone 8–12 weeks with daily sunscreen.</p>
+    </div>
+    <div class="card"><h3>Last 7 Days — Scores</h3><div id="chart"></div><p class="small">Bars = Smoothness (blue) &amp; Even tone (teal), out of 5. Dots = Redness, out of 3.</p></div>
+    <div class="card" id="weeklyCard"><h3>Sunday Weekly Summary</h3><div id="weeklySummary" class="small">Your first weekly summary appears on Sunday 15 Nov.</div></div>
+    <div class="card"><h3>History (last 14 days)</h3><div id="history"></div></div>
+
+    <div class="card"><h3>⚙️ Settings — My Timings</h3>
+      <label>Morning routine starts at</label><input type="time" id="setMorning" class="time-input">
+      <label>Midday starts at (sunscreen check)</label><input type="time" id="setMidday" class="time-input">
+      <label>Night routine starts at</label><input type="time" id="setEvening" class="time-input">
+      <label>My weekly shave day</label>
+      <select id="setShaveDay" class="time-input">
+        <option value="">Not fixed — I use the toggle</option>
+        <option value="0">Every Sunday</option><option value="1">Every Monday</option><option value="2">Every Tuesday</option>
+        <option value="3">Every Wednesday</option><option value="4">Every Thursday</option><option value="5">Every Friday</option><option value="6">Every Saturday</option>
+      </select>
+      <button class="primary" id="saveSettings">Save Settings</button>
+      <p class="small" id="settingsMsg"></p>
+    </div>
+
+    <div class="card"><h3>Your Data &amp; Backup</h3>
+      <p class="small">Tracking data is stored <b>on this device, in this browser</b> (localStorage, with a safety shadow copy). It survives closing the app, but not clearing browser data or changing phone/browser. Export a backup regularly — Sunday is a good habit.</p>
+      <p class="small" id="storageInfo"></p>
+      <button class="secondary" id="exportBtn">Export backup (JSON)</button>
+      <label class="file-label">Import backup<input type="file" id="importFile" accept="application/json" hidden></label>
+      <p class="small" id="backupMsg"></p>
+      <p class="small">App version <b>1.1.1</b> · GitHub static build · No account, no server, no trackers — nothing leaves your phone.</p>
+    </div>
+  </section>
+
+  <!-- RULES -->
+  <section id="tab-rules" class="tab">
+    <div class="card"><h3>Golden Rules</h3><ul>
+      <li>Never scrub, never use hot water, never wash more than twice a day.</li>
+      <li>Sunscreen every single day — this matters more for even tone than the serum.</li>
+      <li>Don't pick spots/bumps — picking creates the dark marks you want to remove.</li>
+      <li>Pat products on, don't rub hard. Toner always with palms, no cotton rubbing.</li>
+    </ul></div>
+    <div class="card"><h3>Do NOT Combine (until Week 6 re-check)</h3><ul>
+      <li>No Vitamin C, retinol, salicylic acid, glycolic acid, scrubs, or fragranced aftershave.</li>
+      <li>All your products contain niacinamide — that is why the routine is staged.</li>
+    </ul></div>
+    <div class="card"><h3>Go Back To Basics If…</h3><ul>
+      <li>Burning lasts more than 1–2 minutes, itching or swelling.</li>
+      <li>Redness is clearly worse for 2 days in a row.</li>
+      <li>Many new small bumps keep spreading.</li>
+    </ul><p>Then: stop the newest product, do Stage A (Face Wash + Gel Cream + Sunscreen) for 3 days.</p></div>
+    <div class="card"><h3>Shave Day Rules</h3><ul>
+      <li>Shave after warm Face Wash, with the grain, rinse blade often.</li>
+      <li>That day: skip Toner and Serum completely.</li>
+      <li>If still red next day, do one more basics-only day.</li>
+    </ul></div>
+  </section>
+</main>
+
+<nav class="bottom-nav">
+  <button data-tab="today" class="active">🏠<span>Today</span></button>
+  <button data-tab="products">🧴<span>Products</span></button>
+  <button data-tab="progress">📈<span>Progress</span></button>
+  <button data-tab="rules">📋<span>Rules</span></button>
+</nav>
+
+<script src="app.js"></script>
+</body>
+</html>
