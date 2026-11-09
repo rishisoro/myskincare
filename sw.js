@@ -1,6 +1,6 @@
 /* My Plum Routine — service worker: offline cache of the app shell.
    Tracking data is NOT stored here — it lives in localStorage (see app.js). */
-const CACHE = 'my-plum-routine-v3';
+const CACHE = 'my-plum-routine-v4';
 const ASSETS = ['./', './index.html', './styles.css', './app.js', './manifest.json', './icons/icon-192.png', './icons/icon-512.png'];
 
 self.addEventListener('message', event => { if (event.data === 'SKIP_WAITING') self.skipWaiting(); });

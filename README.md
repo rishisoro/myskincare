@@ -39,7 +39,11 @@ README.md
 - **Shave day:** Toggle on your weekly razor day — toner & serum are skipped automatically.
 - Before 9 Nov 2026 the app is in preview mode: you can look around, but ticks/logs are not counted.
 
-## What's new in v1.1.1
+## What's new in v1.2.0
+- One-screen Home: compact header, slimmer steps and progress ring, shave toggle folded into the Do Now card, other routines collapsed to one-line summaries (tap to view), Daily Log stays collapsed until tapped, and the Sunday photo card moved to the Progress tab (a slim Sunday strip on Home links to it on Sundays). The Today screen now fits a phone screen without scrolling.
+- Missed-step popup: when a routine window has passed with steps unticked (this morning's steps by evening, or last night's steps the next day), a popup lists each missed step with three one-tap actions — ✓ Already done (ticks it), ✗ Missed it (records it as missed, shown on the step), ⏰ Remind me (snoozes that step for 1 hour). "Not now" snoozes everything shown for 20 minutes.
+
+## What was new in v1.1.1
 - Auto-update: the app checks for a new version every time it opens, whenever it returns to the foreground, and hourly while open. When a new version is pushed to this repo, the installed app downloads it, activates it and reloads itself automatically — no reinstall needed. The in-app update banner remains as a manual fallback. Service-worker cache bumped to v3.
 
 ## What was new in v1.1.0

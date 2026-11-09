@@ -1,6 +1,6 @@
 'use strict';
-/* My Plum Routine v1.1.1 — Rishikanta | Browser-persistent (localStorage + shadow copy) | Starts Mon 9 Nov 2026 IST */
-const APP_VERSION = '1.1.1';
+/* My Plum Routine v1.2.0 — Rishikanta | Browser-persistent (localStorage + shadow copy) | Starts Mon 9 Nov 2026 IST */
+const APP_VERSION = '1.2.0';
 const START = '2026-11-09';
 const STORE_KEY = 'myPlumRoutine.v1';
 const SHADOW_KEY = STORE_KEY + '.shadow';
@@ -20,7 +20,7 @@ const GEL_PM = { id: 'gelcream', n: 'Gel Cream 2%', note: 'Slightly thicker laye
 const SPF = { id: 'sunscreen', n: 'Sunscreen SPF 50 PA++++', note: '2 finger lengths, face + neck, 15 min before going out' };
 const DEFAULT_SETTINGS = { morning: '05:00', midday: '12:00', evening: '18:00', shaveWeekday: null };
 
-function blankStore() { return { version: 1, days: {}, logs: {}, settings: { ...DEFAULT_SETTINGS }, hold: null, holdDismissedFor: null, tourSeen: false, installDismissed: false }; }
+function blankStore() { return { version: 1, days: {}, logs: {}, settings: { ...DEFAULT_SETTINGS }, hold: null, holdDismissedFor: null, tourSeen: false, installDismissed: false, snooze: {} }; }
 function normalise(data) {
   const s = blankStore();
   if (data && typeof data === 'object') {
@@ -29,6 +29,7 @@ function normalise(data) {
     if (data.settings && typeof data.settings === 'object') s.settings = { ...DEFAULT_SETTINGS, ...data.settings };
     s.hold = data.hold || null; s.holdDismissedFor = data.holdDismissedFor || null;
     s.tourSeen = !!data.tourSeen; s.installDismissed = !!data.installDismissed;
+    if (data.snooze && typeof data.snooze === 'object') s.snooze = data.snooze;
   }
   return s;
 }
@@ -71,11 +72,57 @@ function greetingFor(h) {
   return ['Good Night, Rishikanta 🌙', 'Finish your night routine, then rest — skin repairs while you sleep.'];
 }
 function isAutoShave(iso) { return store.settings.shaveWeekday !== null && store.settings.shaveWeekday !== '' && dateOf(iso).getDay() === Number(store.settings.shaveWeekday); }
-function dayRec(iso) { if (!store.days[iso]) store.days[iso] = { am: {}, pm: {}, midday: {}, shave: isAutoShave(iso), photo: false }; return store.days[iso]; }
+function dayRec(iso) { if (!store.days[iso]) store.days[iso] = { am: {}, pm: {}, midday: {}, missed: {}, shave: isAutoShave(iso), photo: false }; const r = store.days[iso]; if (!r.am) r.am = {}; if (!r.pm) r.pm = {}; if (!r.midday) r.midday = {}; if (!r.missed) r.missed = {}; return r; }
 function pct(done, total) { return total ? Math.round(done / total * 100) : 0; }
 function realSteps(steps) { return steps.filter(s => !s.rest); }
 function countDone(rec, steps, bucket) { return steps.filter(s => !s.rest && rec[bucket][s.id]).length; }
 function timeStr(isoTs) { if (!isoTs) return ''; const d = new Date(isoTs); let h = d.getHours(), m = String(d.getMinutes()).padStart(2, '0'); const ap = h >= 12 ? 'PM' : 'AM'; h = h % 12 || 12; return h + ':' + m + ' ' + ap; }
+
+/* ===== Missed-step popup ===== */
+function missKey(iso, bucket, id) { return iso + '|' + bucket + '|' + id; }
+function unresolvedSteps(iso, bucket, steps) { const r = store.days[iso]; if (!r) return []; return realSteps(steps).filter(s => !r[bucket][s.id] && !(r.missed && r.missed[bucket + ':' + s.id])); }
+function computeMissQueue(todayIso, slot, effIso, amToday, started) {
+  if (!started || !store.tourSeen) return [];
+  const q = [];
+  const yIso = addDays(todayIso, -1);
+  if (slot !== 'late' && yIso >= START) {
+    const yr = store.days[yIso];
+    if (yr) {
+      const yd = dayNum(yIso);
+      unresolvedSteps(yIso, 'pm', pmSteps(yd, !!yr.shave)).forEach(s => q.push({ iso: yIso, bucket: 'pm', step: s, ctx: 'Last night' }));
+      unresolvedSteps(yIso, 'am', amSteps(yd, !!yr.shave)).forEach(s => q.push({ iso: yIso, bucket: 'am', step: s, ctx: 'Yesterday morning' }));
+    }
+  }
+  if (slot === 'evening' && effIso === todayIso && effIso >= START) {
+    unresolvedSteps(effIso, 'am', amToday).forEach(s => q.push({ iso: effIso, bucket: 'am', step: s, ctx: 'This morning' }));
+  }
+  const nowMs = Date.now();
+  return q.filter(item => { const u = (store.snooze || {})[missKey(item.iso, item.bucket, item.step.id)]; return !u || nowMs > u; }).slice(0, 6);
+}
+let missSig = '', missQueueNow = [];
+function renderMiss(queue) {
+  const ov = document.getElementById('missOverlay'); const list = document.getElementById('missList');
+  missQueueNow = queue;
+  if (!queue.length) { ov.classList.add('hidden'); missSig = ''; return; }
+  const sig = queue.map(q => missKey(q.iso, q.bucket, q.step.id)).join(',');
+  if (sig === missSig && !ov.classList.contains('hidden')) return;
+  missSig = sig; list.innerHTML = '';
+  queue.forEach(q => {
+    const row = document.createElement('div'); row.className = 'miss-row';
+    const name = document.createElement('div'); name.className = 'miss-name'; name.textContent = q.step.n;
+    const ctx = document.createElement('div'); ctx.className = 'miss-ctx'; ctx.textContent = q.ctx + (q.bucket === 'am' ? ' · Morning routine' : ' · Night routine');
+    const btns = document.createElement('div'); btns.className = 'miss-btns';
+    const b1 = document.createElement('button'); b1.className = 'b-done'; b1.textContent = '✓ Already done';
+    const b2 = document.createElement('button'); b2.className = 'b-miss'; b2.textContent = '✗ Missed it';
+    const b3 = document.createElement('button'); b3.className = 'b-remind'; b3.textContent = '⏰ Remind me';
+    b1.addEventListener('click', () => { const r = dayRec(q.iso); r[q.bucket][q.step.id] = new Date().toISOString(); if (r.missed) delete r.missed[q.bucket + ':' + q.step.id]; save(store); render(); });
+    b2.addEventListener('click', () => { const r = dayRec(q.iso); r.missed[q.bucket + ':' + q.step.id] = new Date().toISOString(); save(store); render(); });
+    b3.addEventListener('click', () => { if (!store.snooze) store.snooze = {}; store.snooze[missKey(q.iso, q.bucket, q.step.id)] = Date.now() + 60 * 60000; save(store); render(); });
+    btns.appendChild(b1); btns.appendChild(b2); btns.appendChild(b3);
+    row.appendChild(name); row.appendChild(ctx); row.appendChild(btns); list.appendChild(row);
+  });
+  ov.classList.remove('hidden');
+}
 
 function amSteps(day, shave) {
   if (shave) return [
@@ -99,12 +146,13 @@ function pmSteps(day, shave) {
 const state = { log: { redness: null, smooth: null, tone: null, burn: null } };
 function stepEl(iso, bucket, step, disabled) {
   const rec = dayRec(iso); const doneTs = rec[bucket][step.id];
+  const missedTs = !doneTs && rec.missed && rec.missed[bucket + ':' + step.id];
   const div = document.createElement('label');
-  div.className = 'step' + (doneTs ? ' done' : '') + (step.rest ? ' skipped' : '');
+  div.className = 'step' + (doneTs ? ' done' : '') + (step.rest ? ' skipped' : '') + (missedTs ? ' missed' : '');
   const cb = document.createElement('input'); cb.type = 'checkbox'; cb.checked = !!doneTs; cb.disabled = disabled || !!step.rest;
-  cb.addEventListener('change', () => { const r = dayRec(iso); if (cb.checked) r[bucket][step.id] = new Date().toISOString(); else delete r[bucket][step.id]; save(store); render(); });
+  cb.addEventListener('change', () => { const r = dayRec(iso); if (cb.checked) { r[bucket][step.id] = new Date().toISOString(); if (r.missed) delete r.missed[bucket + ':' + step.id]; } else delete r[bucket][step.id]; save(store); render(); });
   const body = document.createElement('div');
-  body.innerHTML = '<div class="name"></div><div class="note"></div>' + (doneTs ? '<div class="time">Done at ' + timeStr(doneTs) + '</div>' : '');
+  body.innerHTML = '<div class="name"></div><div class="note"></div>' + (doneTs ? '<div class="time">Done at ' + timeStr(doneTs) + '</div>' : '') + (missedTs ? '<div class="missedtag">✗ Marked missed</div>' : '');
   body.querySelector('.name').textContent = step.n; body.querySelector('.note').textContent = step.note;
   div.appendChild(cb); div.appendChild(body); return div;
 }
@@ -153,7 +201,7 @@ function render() {
   const doNow = document.getElementById('doNowBody'); doNow.innerHTML = '';
   const title = document.getElementById('doNowTitle'); const other = document.getElementById('otherRoutine'); other.innerHTML = '';
   const dis = preview;
-  function summaryCard(heading, iso2, bucket, steps) { const c = document.createElement('div'); c.className = 'card'; const rec2 = dayRec(iso2); c.innerHTML = '<h3></h3>'; c.querySelector('h3').textContent = heading + ' — ' + countDone(rec2, steps, bucket) + '/' + realSteps(steps).length + ' done'; c.appendChild(checklist(iso2, bucket, steps, dis)); return c; }
+  function summaryCard(heading, iso2, bucket, steps) { const c = document.createElement('details'); c.className = 'card slim'; const rec2 = dayRec(iso2); const sm = document.createElement('summary'); sm.innerHTML = '<h3 style="display:inline"></h3> <span class="small">— tap to view</span>'; sm.querySelector('h3').textContent = heading + ' — ' + countDone(rec2, steps, bucket) + '/' + realSteps(steps).length + ' done'; c.appendChild(sm); c.appendChild(checklist(iso2, bucket, steps, dis)); return c; }
 
   if (slot === 'morning') {
     title.textContent = '☀️ Do Now — Morning Routine' + (preview ? ' (Day 1 preview)' : '');
@@ -192,7 +240,10 @@ function render() {
   }
   const nextStep = doNow.querySelector('.step:not(.done):not(.skipped)');
   if (nextStep) nextStep.classList.add('next');
-  document.getElementById('logDetails').open = (slot === 'evening' || slot === 'late');
+  const strip = document.getElementById('sundayStrip');
+  const isSunday = dateOf(todayIso).getDay() === 0;
+  strip.classList.toggle('hidden', !(started && isSunday));
+  if (started && isSunday) document.getElementById('sundayStripText').innerHTML = (store.days[todayIso] && store.days[todayIso].photo) ? '<b>Sunday:</b> progress photo done ✓ — nice!' : '<b>Sunday:</b> progress photo day — daylight, facing a window';
 
   const shaveT = document.getElementById('shaveToggle'); shaveT.checked = shave; shaveT.disabled = preview;
 
@@ -230,6 +281,7 @@ function render() {
   rf.textContent = flag; rf.classList.toggle('hidden', !flag);
 
   document.getElementById('photoStatus').textContent = rec.photo ? 'Photo marked done ✓' : (now.getDay() === 0 ? 'Today is Sunday — photo day!' : 'Next photo: coming Sunday.');
+  renderMiss(computeMissQueue(todayIso, slot, effIso, am, started));
   renderProgress(todayIso, started);
   renderPhotos();
 }
@@ -347,6 +399,8 @@ document.querySelectorAll('.bottom-nav button').forEach(b => b.addEventListener(
   window.scrollTo({ top: 0 });
 }));
 document.getElementById('tourDone').addEventListener('click', () => { store.tourSeen = true; save(store); render(); });
+document.getElementById('missClose').addEventListener('click', () => { if (!store.snooze) store.snooze = {}; missQueueNow.forEach(q => { store.snooze[missKey(q.iso, q.bucket, q.step.id)] = Date.now() + 20 * 60000; }); save(store); document.getElementById('missOverlay').classList.add('hidden'); missSig = ''; render(); });
+document.getElementById('sundayGo').addEventListener('click', () => { document.querySelector('[data-tab="progress"]').click(); setTimeout(() => { const c = document.getElementById('sundayCard'); if (c) c.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 60); });
 document.getElementById('installDismiss').addEventListener('click', e => { e.stopPropagation(); store.installDismissed = true; save(store); render(); });
 let deferredInstall = null;
 window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); deferredInstall = e; });

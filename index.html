@@ -26,6 +26,15 @@
   </div>
 </div>
 
+<div id="missOverlay" class="tour hidden">
+  <div class="tour-box">
+    <h2>⏰ A few missed steps</h2>
+    <p class="small">Life happens — just tap what happened for each step, so your record stays true.</p>
+    <div id="missList"></div>
+    <button class="secondary" id="missClose">Not now — remind me soon</button>
+  </div>
+</div>
+
 <header class="app-header">
   <div class="greeting" id="greeting">Good Day, Rishikanta</div>
   <div class="wish" id="wish"></div>
@@ -50,15 +59,14 @@
     <div class="card donow">
       <h2 id="doNowTitle">Do Now</h2>
       <div id="doNowBody"></div>
+      <div class="shave-row">
+        <span class="shave-label">🪒 Shave day</span>
+        <span class="small" id="shaveHint">ON = toner &amp; serum skipped today</span>
+        <label class="switch"><input type="checkbox" id="shaveToggle"><span></span></label>
+      </div>
     </div>
 
-    <div class="card">
-      <div class="row between"><h3>Shave Day</h3>
-      <label class="switch"><input type="checkbox" id="shaveToggle"><span></span></label></div>
-      <p class="small" id="shaveHint">Turn ON only on your razor day. Toner &amp; serum are skipped that day. Tip: set your weekly shave day in Settings (Progress tab) and this turns on automatically.</p>
-    </div>
-
-    <div class="card">
+    <div class="card progress-card">
       <h3>Today's Progress</h3>
       <div class="ring-row">
         <div class="ring-wrap">
@@ -96,23 +104,7 @@
       </details>
     </div>
 
-    <div class="card" id="sundayCard">
-      <h3>📸 Sunday Progress Photo</h3>
-      <p class="small">Daylight, facing a window, same angle, no product on skin. Photos are stored <b>only on this device</b> (IndexedDB) — never uploaded.</p>
-      <label class="file-label">Add progress photo<input type="file" id="photoFile" accept="image/*" capture="user" hidden></label>
-      <button class="secondary" id="photoBtn">Mark photo done (no upload)</button>
-      <p class="small" id="photoStatus"></p>
-      <div id="photoCompare" class="hidden">
-        <p class="small"><b>Compare:</b> first photo ↔ latest photo. Drag the slider.</p>
-        <div class="compare-wrap">
-          <img id="cmpNew" alt="Latest progress photo">
-          <div class="compare-top" id="cmpTopWrap"><img id="cmpOld" alt="First progress photo"></div>
-          <input type="range" id="cmpSlider" min="0" max="100" value="50">
-        </div>
-        <div class="row between small"><span>First</span><span>Latest</span></div>
-      </div>
-      <div id="photoGallery" class="gallery"></div>
-    </div>
+    <div id="sundayStrip" class="banner hidden">📸 <span id="sundayStripText"><b>Sunday:</b> progress photo day</span> <button class="mini" id="sundayGo">Open photo card</button></div>
   </section>
 
   <!-- PRODUCTS -->
@@ -135,6 +127,23 @@
     </div>
     <div class="card"><h3>Last 7 Days — Scores</h3><div id="chart"></div><p class="small">Bars = Smoothness (blue) &amp; Even tone (teal), out of 5. Dots = Redness, out of 3.</p></div>
     <div class="card" id="weeklyCard"><h3>Sunday Weekly Summary</h3><div id="weeklySummary" class="small">Your first weekly summary appears on Sunday 15 Nov.</div></div>
+    <div class="card" id="sundayCard">
+      <h3>📸 Sunday Progress Photo</h3>
+      <p class="small">Daylight, facing a window, same angle, no product on skin. Photos are stored <b>only on this device</b> (IndexedDB) — never uploaded.</p>
+      <label class="file-label">Add progress photo<input type="file" id="photoFile" accept="image/*" capture="user" hidden></label>
+      <button class="secondary" id="photoBtn">Mark photo done (no upload)</button>
+      <p class="small" id="photoStatus"></p>
+      <div id="photoCompare" class="hidden">
+        <p class="small"><b>Compare:</b> first photo ↔ latest photo. Drag the slider.</p>
+        <div class="compare-wrap">
+          <img id="cmpNew" alt="Latest progress photo">
+          <div class="compare-top" id="cmpTopWrap"><img id="cmpOld" alt="First progress photo"></div>
+          <input type="range" id="cmpSlider" min="0" max="100" value="50">
+        </div>
+        <div class="row between small"><span>First</span><span>Latest</span></div>
+      </div>
+      <div id="photoGallery" class="gallery"></div>
+    </div>
     <div class="card"><h3>History (last 14 days)</h3><div id="history"></div></div>
 
     <div class="card"><h3>⚙️ Settings — My Timings</h3>
@@ -157,7 +166,7 @@
       <button class="secondary" id="exportBtn">Export backup (JSON)</button>
       <label class="file-label">Import backup<input type="file" id="importFile" accept="application/json" hidden></label>
       <p class="small" id="backupMsg"></p>
-      <p class="small">App version <b>1.1.1</b> · GitHub static build · No account, no server, no trackers — nothing leaves your phone.</p>
+      <p class="small">App version <b>1.2.0</b> · GitHub static build · No account, no server, no trackers — nothing leaves your phone.</p>
     </div>
   </section>
 

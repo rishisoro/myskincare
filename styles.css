@@ -99,3 +99,58 @@ body.dark textarea,body.dark .time-input{background:#142938;color:#e8f3fa}
 body.dark .tour-box{background:#1a2f40;color:#e8f3fa}
 body.dark .banner{background:#3a3520;color:#ffe9a8}
 body.dark .stats div{background:#142938}
+
+/* ===== v1.2 — compact one-screen Home + missed-step popup ===== */
+.app-header{padding:10px 14px 8px}
+.greeting{font-size:19px}
+.wish{font-size:12px;margin-top:1px}
+.header-meta{margin-top:5px}
+.chip{padding:2px 8px}
+main{padding:8px}
+body{padding-bottom:72px}
+.card{padding:10px 12px;margin-bottom:8px;border-radius:14px}
+.card h2{font-size:17px;margin-bottom:6px}
+.card h3{font-size:15px;margin-bottom:6px}
+.banner{margin-bottom:8px;padding:8px 10px}
+.step{padding:8px;min-height:44px;margin-bottom:6px;gap:10px}
+.step input{width:22px;height:22px}
+.step .name{font-size:14px}
+.step .note{font-size:12px;margin-top:1px}
+.step .time{font-size:11px}
+.ring-row{gap:10px}
+.ring-wrap{width:56px;height:56px}
+.ring{width:56px;height:56px}
+.ring-text{font-size:13px}
+.progress-wrap{margin-top:5px}
+.progress-label{margin-bottom:3px;font-size:12px}
+.bar{height:7px}
+.progress-card #timeline,.progress-card #spfTimer{margin-top:6px}
+.shave-row{display:flex;align-items:center;gap:8px;border-top:1px solid var(--line);margin-top:8px;padding-top:8px}
+.shave-label{font-weight:700;font-size:14px}
+.shave-row .small{flex:1;font-size:12px}
+.shave-row .switch{width:46px;height:26px}
+.shave-row .switch span:after{width:20px;height:20px}
+.shave-row .switch input:checked+span:after{left:23px}
+details.card>summary{min-height:32px;display:flex;align-items:center}
+.step .missedtag{font-size:12px;color:var(--danger);font-weight:700;margin-top:2px}
+.step.missed{border-color:#f2b8b0;background:#fdf3f2}
+body.dark .step.missed{background:#3a2326}
+.miss-row{border:1px solid var(--line);border-radius:12px;padding:10px;margin-bottom:8px}
+.miss-name{font-weight:700;font-size:14px}
+.miss-ctx{font-size:12px;color:var(--muted)}
+.miss-btns{display:flex;gap:6px;margin-top:8px}
+.miss-btns button{flex:1;min-height:42px;border-radius:10px;border:1px solid var(--line);background:#fff;font-weight:700;font-size:13px;cursor:pointer;color:inherit}
+.miss-btns .b-done{background:#e5f6ec;border-color:#9fd8b4;color:#146c3c}
+.miss-btns .b-miss{background:#fdecea;border-color:#f2b8b0;color:#a93226}
+.miss-btns .b-remind{background:#fff4d6;border-color:#f0d48a;color:#7a5c00}
+body.dark .miss-btns button{background:#142938}
+body.dark .miss-btns .b-done{background:#173a26;color:#8fe3ae}
+body.dark .miss-btns .b-miss{background:#3a2326;color:#f0a49c}
+body.dark .miss-btns .b-remind{background:#3a3520;color:#ffe9a8}
+#missClose{width:100%;margin-top:4px}
+@media (max-height:720px){
+  .wish{display:none}
+  .greeting{font-size:17px}
+  .step{min-height:40px;padding:6px 8px}
+  .app-header{padding:8px 12px 6px}
+}
